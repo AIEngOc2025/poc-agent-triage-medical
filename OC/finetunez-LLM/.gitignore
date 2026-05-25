@@ -1,0 +1,42 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# PDF documents (project specs, not version controlled)
+*.pdf
+
+# Python environment
+.venv/
+venv/
+*.egg-info/
+__pycache__/
+*.pyc
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project-specific
+finetunez-llm-agent/.env
+finetunez-llm-agent/.env.local
+finetunez-llm-agent/audit_logs/
+
+# Data files (RGPD compliance)
+finetunez-llm-agent/data/raw/
+finetunez-llm-agent/data/processed/
+
+# Model files (not version controlled)
+finetunez-llm-agent/models/
+*.bin
+*.safetensors
+*.pth
+*.pt
+
+# Cache directories
+.cache/
+.huggingface/
+.terraform/
+.terraform.lock.hcl
