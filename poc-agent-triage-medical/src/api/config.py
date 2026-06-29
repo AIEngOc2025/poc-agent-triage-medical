@@ -1,17 +1,27 @@
 import os
 from pathlib import Path
 
+# --- Détection de l'environnement ---
+IS_PRODUCTION = os.getenv("FASTAPI_CLOUD", "false").lower() == "true"
+
 # --- 1. Project Structure ---
 # Le chemin de base est la racine du projet (un niveau au-dessus de 'src')
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # --- 2. vLLM Engine Configuration ---
-# Use environment variables for paths that change between machines
-VENV_PYTHON_PATH = os.getenv("VENV_PYTHON_PATH", "/Users/mpaga/.venv-vllm-metal/bin/python")
-VLLM_BINARY_PATH = os.getenv("VLLM_BINARY_PATH", "/Users/mpaga/.venv-vllm-metal/bin/vllm")
+if IS_PRODUCTION:
+    # Dans l'environnement FastAPI Cloud, les binaires sont dans le PATH du venv
+    VENV_PYTHON_PATH = "python"
+    VLLM_BINARY_PATH = "vllm"
+    # Le modèle est copié dans le conteneur
+    MODEL_PATH = "models/merged_dpo_final_chsa"
+else:
+    # Chemins pour le développement local sur Mac
+    VENV_PYTHON_PATH = os.getenv("VENV_PYTHON_PATH", "/Users/mpaga/.venv-vllm-metal/bin/python")
+    VLLM_BINARY_PATH = os.getenv("VLLM_BINARY_PATH", "/Users/mpaga/.venv-vllm-metal/bin/vllm")
+    # Chemin absolu vers le modèle pour éviter les erreurs d'interprétation par vLLM
+    MODEL_PATH = os.getenv("MODEL_PATH", str(BASE_DIR / "models" / "merged_dpo_final_chsa"))
 
-# Chemin absolu vers le modèle pour éviter les erreurs d'interprétation par vLLM
-MODEL_PATH = os.getenv("MODEL_PATH", str(BASE_DIR / "src/models/merged_dpo_final_chsa"))
 
 # Network ports
 VLLM_PORT = 8000
@@ -29,5 +39,5 @@ VLLM_SERVER_ARGS = [
 
 # --- 3. Logging & Auditing ---
 LOG_DIR = BASE_DIR / "logs"
-AUDIT_LOG_FILE = LOG_DIR / "audit_medical.jsonl"
+LOG_FILE = LOG_DIR / "audit_medical.jsonl"
 VLLM_LOG_FILE = LOG_DIR / "vllm_server.log"

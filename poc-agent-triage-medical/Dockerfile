@@ -1,57 +1,53 @@
-# 1. Image de base légère (Debian Bookworm slim)
-FROM python:3.12-slim-bookworm
+# --- Étape 1: Image de base avec CUDA ---
+# Utilisation d'une image officielle NVIDIA pour garantir la compatibilité GPU.
+# Python 3.12 est installé manuellement car il n'est pas disponible par défaut.
+FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
 
-# 2. Installation de l'orchestrateur 'uv' (Standard 2026)
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+# --- Étape 2: Installation des dépendances système et de Python 3.12 ---
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    python3.12 \
+    python3.12-venv \
+    python3-pip \
+    git \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# 3. Définition des variables d'environnement
+# Mise à jour des liens symboliques pour que 'python' et 'pip' pointent vers la version 3.12
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1
+RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
+
+# --- Étape 3: Installation de 'uv' (gestionnaire de paquets) ---
+RUN python -m pip install uv
+
+# --- Étape 4: Configuration de l'environnement de l'application ---
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV UV_COMPILE_BYTECODE=1
-ENV UV_LINK_MODE=copy
+# Variable pour activer la configuration de production dans config.py
+ENV FASTAPI_CLOUD=true
 
 WORKDIR /app
 
-# 4. Copie des fichiers de configuration
-COPY pyproject.toml uv.lock ./
+# --- Étape 5: Installation des dépendances Python ---
+# Copier uniquement les fichiers de dépendances pour profiter du cache Docker.
+# Cette couche ne sera reconstruite que si pyproject.toml change.
+COPY pyproject.toml ./
 
-# 5. Installation des dépendances de production 
-# Note : En Docker/Linux, uv installera la version standard de vLLM (CUDA ou CPU)
-RUN uv sync --frozen --no-cache --no-dev
+# Installation des dépendances de production (sans les dépendances de dev)
+RUN uv pip install --system --no-cache --no-deps -r pyproject.toml
 
-# 6. Copie du code source et du modèle fusionné
+# --- Étape 6: Copie du code source et des modèles ---
+# Copier le reste de l'application.
 COPY src/ ./src/
-COPY models/merged_final_dpo_chsa/ ./models/merged_final_dpo_chsa/
-COPY logs/ ./logs/
+COPY models/merged_dpo_final_chsa/ ./models/merged_dpo_final_chsa/
 
-# 7. Exposition du port de l'agent
-EXPOSE 8000
+# --- Étape 7: Exposition du port ---
+# Le port de l'API est défini dans config.py comme 8001
+EXPOSE 8001
 
-# 8. Lancement de l'API via le venv de uv
-# On force le mode CPU dans Docker pour la portabilité, 
-# sauf si un GPU NVIDIA est présent.
-CMD ["uv", "run", "uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]# Utilisation d'une image légère
-FROM python:3.12-slim
-
-# Installation de uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
-
-# Définition du répertoire de travail
-WORKDIR /app
-
-# Copie des fichiers de configuration
-COPY pyproject.toml uv.lock ./
-
-# Installation des dépendances (sans installer le projet lui-même)
-RUN uv sync --frozen --no-cache
-
-# Copie du code source et du modèle
-COPY src/ ./src/
-COPY models/chsa_model_dpo_final/ ./models/chsa_model_dpo_final/
-COPY logs/ ./logs/
-
-# Exposition du port API
-EXPOSE 8000
-
-# Commande de lancement via uv (plus sécurisé et gère le venv)
-CMD ["uv", "run", "uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# --- Étape 8: Commande de lancement ---
+# Lancement de l'application avec Uvicorn. L'hôte 0.0.0.0 est crucial.
+# Le port est récupéré depuis la configuration pour plus de cohérence.
+CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8001"]
