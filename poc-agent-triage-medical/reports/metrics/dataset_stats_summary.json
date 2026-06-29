@@ -1,0 +1,15 @@
+{
+    "dataset_name": "Mpaga_Christophe_1_Dataset_Train_SFT_052026.jsonl",
+    "total_rows": 21007,
+    "language_distribution": {
+        "en": 15210,
+        "fr": 5797
+    },
+    "anonymization_metrics": {
+        "<PATIENT>": 11500
+    },
+    "average_lengths": {
+        "instruction": 165.71,
+        "response": 428.16
+    }
+}
