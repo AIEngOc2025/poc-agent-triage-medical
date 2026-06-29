@@ -1,0 +1,27 @@
+[project]
+name = "poc-agent-triage-medical"
+version = "0.1.0"
+description = "POC Agent IA de triage médical pour le CHSA"
+authors = [{name = "Mpaga Christophe"}]
+requires-python = ">=3.12"  # Fixe le warning
+dependencies = [
+    "fastapi[standard]>=0.110.0",
+    "uvicorn>=0.29.0",
+    "pydantic>=2.6.0",
+    "torch>=2.4.0",
+    "transformers>=4.44.0",
+    "vllm>=0.6.0", # Force une version qui supporte le Mac
+    "gradio>=6.19.0",
+    "peft>=0.19.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "ruff>=0.4.0",
+    "black>=24.0.0",
+]
+
+[tool.fastapi]
+entrypoint="src.api.main:app"
+reload=true

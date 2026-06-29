@@ -1,0 +1,19 @@
+# --- Cœur du projet (Adapté Mac) ---
+torch>=2.2.0
+transformers>=4.40.0
+accelerate>=0.29.0
+peft>=0.10.0
+trl>=0.8.6
+datasets>=2.18.0
+sentencepiece
+
+# --- Étape 1 : Anonymisation ---
+presidio-analyzer
+presidio-anonymizer
+spacy
+pandas
+
+# --- Étape 4 : API ---
+fastapi
+uvicorn
+# vllm  <-- Ne pas installer sur Mac (garder pour Docker)
